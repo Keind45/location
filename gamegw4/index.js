@@ -65,42 +65,42 @@ const player = new Player({
   frameRate: 8,
   animations: {
     Idle: {
-      imageSrc: './img/warrior/gi1.png',
+      imageSrc: './img/warrior/vi1.png',
       frameRate: 18,
       frameBuffer: 3,
     },
     Run: {
-      imageSrc: './img/warrior/g1.png',
+      imageSrc: './img/warrior/v1.png',
       frameRate: 12,
       frameBuffer: 5,
     },
     Jump: {
-      imageSrc: './img/warrior/g1lk.png',
+      imageSrc: './img/warrior/v1l.png',
       frameRate: 6,
       frameBuffer: 3,
     },
     Fall: {
-      imageSrc: './img/warrior/gf1.png',
+      imageSrc: './img/warrior/vf1.png',
       frameRate: 6,
       frameBuffer: 3,
     },
     FallLeft: {
-      imageSrc: './img/warrior/gf1kiri.png',
+      imageSrc: './img/warrior/vf1kiri.png',
       frameRate: 6,
       frameBuffer: 3,
     },
     RunLeft: {
-      imageSrc: './img/warrior/g1kiri.png',
+      imageSrc: './img/warrior/v1kiri.png',
       frameRate: 12,
       frameBuffer: 5,
     },
     IdleLeft: {
-      imageSrc: './img/warrior/gi1kiri.png',
+      imageSrc: './img/warrior/vi1kiri.png',
       frameRate: 18,
       frameBuffer: 3,
     },
     JumpLeft: {
-      imageSrc: './img/warrior/g1lkiri.png',
+      imageSrc: './img/warrior/v1lk.png',
       frameRate: 6,
       frameBuffer: 3,
     },
@@ -115,6 +115,9 @@ const keys = {
   a: {
     pressed: false,
   },
+  space: {
+    pressed: false, // Menambahkan key untuk space
+  }
 }
 
 const background = new Sprite({
@@ -134,6 +137,91 @@ const camera = {
   },
 }
 
+// Kelas untuk Item yang bisa diambil
+class Item {
+  constructor({ position, imageSrc }) {
+    this.position = position
+    this.image = new Image()
+    this.image.src = imageSrc
+    this.width = 50 // lebar item
+    this.height = 32 // tinggi item
+    this.collected = false // apakah item sudah diambil
+  }
+
+  draw() {
+    if (!this.collected) {
+      c.drawImage(this.image, this.position.x, this.position.y, this.width, this.height)
+    }
+  }
+
+  collect(player) {
+    // Jika pemain bertabrakan dengan item dan tombol space ditekan
+    if (
+      player.position.x + player.width > this.position.x &&
+      player.position.x < this.position.x + this.width &&
+      player.position.y + player.height > this.position.y &&
+      player.position.y < this.position.y + this.height &&
+      keys.space.pressed // Menunggu tombol space ditekan
+    ) {
+      this.collected = true // item sudah diambil
+      // Lakukan sesuatu jika item diambil, seperti menambah skor
+      console.log("Item collected!");
+      keys.space.pressed = false; // Reset tombol space setelah item diambil
+    }
+  }
+}
+
+// Menambahkan 4 item ke dalam game
+const items = [
+  new Item({ position: { x: 32, y: 310 }, imageSrc: './img/warrior/43.png' }),  // Item pertama
+  new Item({ position: { x: 369, y: 50 }, imageSrc: './img/warrior/44.png' }),  // Item kedua
+  new Item({ position: { x: 179, y: 40 }, imageSrc: './img/warrior/45.png' }),  // Item ketiga
+  new Item({ position: { x: 272, y: 227 }, imageSrc: './img/warrior/46.png' })   // Item keempat
+]
+
+// Kelas untuk Portal
+class Portal {
+  constructor({ position, imageSrc }) {
+    this.position = position
+    this.image = new Image()
+    this.image.src = imageSrc
+    this.width = 64
+    this.height = 98
+    this.active = false // Portal belum aktif
+  }
+
+  draw() {
+    if (this.active) {
+      c.drawImage(this.image, this.position.x, this.position.y, this.width, this.height)
+    }
+  }
+
+  // Cek apakah pemain bertabrakan dengan portal
+  checkCollision(player) {
+    if (
+      player.position.x + player.width > this.position.x &&
+      player.position.x < this.position.x + this.width &&
+      player.position.y + player.height > this.position.y &&
+      player.position.y < this.position.y + this.height
+    ) {
+      // Pindahkan pemain ke stage berikutnya
+      console.log("Portal Entered! Level Completed.");
+      nextLevel();
+    }
+  }
+}
+
+// Menambahkan portal ke dalam game
+const portal = new Portal({ position: { x: 266, y: 150 }, imageSrc: './img/warrior/portal.png' })
+
+// Fungsi untuk pindah ke level berikutnya
+function nextLevel() {
+  console.log("Portal Entered! Moving to next stage...");
+
+  // Pindah ke halaman baru (stage 2)
+  window.location.href = "../gamegw4/index.html";  // Mengarahkan ke halaman stage baru
+}
+
 function animate() {
   window.requestAnimationFrame(animate)
   c.fillStyle = 'white'
@@ -143,16 +231,32 @@ function animate() {
   c.scale(4, 4)
   c.translate(camera.position.x, camera.position.y)
   background.update()
-  // collisionBlocks.forEach((collisionBlock) => {
-  //   collisionBlock.update()
-  // })
-
-  // platformCollisionBlocks.forEach((block) => {
-  //   block.update()
-  // })
+  collisionBlocks.forEach((collisionBlock) => {
+    collisionBlock.update()
+  })
+  platformCollisionBlocks.forEach((block) => {
+    block.update()
+  })
 
   player.checkForHorizontalCanvasCollision()
   player.update()
+
+  // Cek apakah pemain bertabrakan dengan item dan menekan tombol space
+  items.forEach((item) => {
+    item.collect(player)
+    item.draw() // Gambar item di layar
+  })
+
+  // Jika semua item terambil, aktifkan portal
+  if (items.every(item => item.collected)) {
+    portal.active = true // Aktifkan portal jika semua item sudah terambil
+  }
+
+  // Gambar dan cek tabrakan dengan portal hanya jika portal aktif
+  if (portal.active) {
+    portal.draw()
+    portal.checkCollision(player)
+  }
 
   if (player.velocity.y === 0) {
     player.canJump = true // Reset canJump ketika menyentuh tanah
@@ -203,6 +307,9 @@ window.addEventListener('keydown', (event) => {
         player.canJump = false // Cegah lompat terus-menerus
       }
       break
+    case ' ':
+      keys.space.pressed = true // Menambahkan aksi saat tombol space ditekan
+      break
   }
 })
 
@@ -213,6 +320,9 @@ window.addEventListener('keyup', (event) => {
       break
     case 'a':
       keys.a.pressed = false
+      break
+    case ' ':
+      keys.space.pressed = false // Mengatur tombol space kembali ke false setelah dilepaskan
       break
   }
 })
