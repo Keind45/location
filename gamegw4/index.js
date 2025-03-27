@@ -231,12 +231,12 @@ function animate() {
   c.scale(4, 4)
   c.translate(camera.position.x, camera.position.y)
   background.update()
-  collisionBlocks.forEach((collisionBlock) => {
-    collisionBlock.update()
-  })
-  platformCollisionBlocks.forEach((block) => {
-    block.update()
-  })
+  // collisionBlocks.forEach((collisionBlock) => {
+  //   collisionBlock.update()
+  // })
+  // platformCollisionBlocks.forEach((block) => {
+  //   block.update()
+  // })
 
   player.checkForHorizontalCanvasCollision()
   player.update()
